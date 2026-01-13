@@ -61,6 +61,7 @@
     .header{padding:32px 40px;display:flex;justify-content:space-between;align-items:center}
     .greeting{display:flex;flex-direction:column;gap:8px}
     .greeting-text{font-size:42px;font-weight:900;letter-spacing:-1.5px;background:linear-gradient(135deg,#fff,#a7a7a7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .greeting-time{font-size:18px;font-weight:700;color:var(--muted);letter-spacing:0.5px}
     .controls{display:flex;gap:12px;align-items:center}
     .btn{padding:10px 20px;border-radius:500px;border:none;cursor:pointer;font-weight:700;transition:all .3s;font-size:13px;letter-spacing:0.5px;text-transform:capitalize;box-shadow:0 4px 16px rgba(0,0,0,.3);position:relative;overflow:hidden}
     .btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;background:rgba(255,255,255,.2);transform:translate(-50%,-50%);transition:width .5s,height .5s}
@@ -228,6 +229,7 @@
       .player{grid-template-columns:1fr 1.5fr 1fr;gap:16px;padding:12px 16px}
       .header{padding:24px 32px}
       .greeting-text{font-size:36px}
+      .greeting-time{font-size:16px}
     }
     
     /* Responsive Design - Mobile */
@@ -249,6 +251,7 @@
       .header{padding:12px 16px;flex-direction:column;align-items:flex-start;gap:10px}
       .greeting{gap:4px}
       .greeting-text{font-size:20px;line-height:1.2}
+      .greeting-time{font-size:14px}
       .controls{width:100%;justify-content:flex-start;gap:6px;flex-wrap:wrap}
       .btn{padding:6px 12px;font-size:11px}
       .btn svg{width:14px;height:14px;margin-right:4px}
@@ -298,6 +301,7 @@
       .libraries{max-height:50px}
       
       .greeting-text{font-size:18px}
+      .greeting-time{font-size:12px}
       .btn{padding:6px 10px;font-size:10px}
       .btn svg{width:14px;height:14px}
       .drop-zone{padding:20px 24px}
@@ -395,6 +399,7 @@
         <div class="header">
           <div class="greeting">
             <div class="greeting-text" id="greetingText">Welcome back — enjoy the music</div>
+            <div class="greeting-time" id="greetingTime"></div>
           </div>
           <div class="controls">
             <input type="file" id="fileInput" multiple accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac" class="hidden">
@@ -1443,9 +1448,33 @@
     window.hideStorageModal = hideStorageModal;
     
     // ============================================
+    // LIVE CLOCK
+    // ============================================
+    function updateClock() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const hours12 = hours % 12 || 12;
+      
+      const timeStr = `${hours12}:${minutes}:${seconds} ${ampm}`;
+      const greetingTimeEl = document.getElementById('greetingTime');
+      if (greetingTimeEl) {
+        greetingTimeEl.textContent = timeStr;
+      }
+    }
+    
+    function startClock() {
+      updateClock();
+      setInterval(updateClock, 1000);
+    }
+    
+    // ============================================
     // START
     // ============================================
     window.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('DOMContentLoaded', startClock);
   </script>
 </body>
 </html>

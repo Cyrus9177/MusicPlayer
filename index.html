@@ -1168,31 +1168,50 @@
     // FILE HANDLING
     // ============================================
     async function handleFiles(files) {
-      console.log('handleFiles called with', files.length, 'files');
+      console.log('📂 handleFiles called with', files.length, 'files');
       
       const audioFiles = Array.from(files).filter(f => {
-        return f.type.startsWith('audio/') || 
+        const isAudio = f.type.startsWith('audio/') || 
                f.name.toLowerCase().endsWith('.mp3') || 
                f.name.toLowerCase().endsWith('.wav') || 
                f.name.toLowerCase().endsWith('.m4a') || 
                f.name.toLowerCase().endsWith('.ogg') || 
                f.name.toLowerCase().endsWith('.flac');
+        console.log(`File: ${f.name}, Type: ${f.type}, IsAudio: ${isAudio}`);
+        return isAudio;
       });
       
+      console.log('🎵 Found', audioFiles.length, 'audio files to upload');
+      
       if (audioFiles.length === 0) {
-        alert('❌ Please select audio files!\n\nSupported: MP3, WAV, M4A, OGG, FLAC');
+        showToast('Please select audio files! Supported: MP3, WAV, M4A, OGG, FLAC', 'error');
         return;
       }
       
       let successCount = 0;
+      let failCount = 0;
       
-      for (const file of audioFiles) {
+      for (let i = 0; i < audioFiles.length; i++) {
+        const file = audioFiles[i];
+        console.log(`⬆️ Uploading ${i + 1}/${audioFiles.length}: ${file.name}`);
         const success = await addTrack(file);
-        if (success) successCount++;
+        if (success) {
+          successCount++;
+          console.log(`✅ Success! (${successCount}/${audioFiles.length})`);
+        } else {
+          failCount++;
+          console.log(`❌ Failed! (${failCount} failures)`);
+        }
       }
       
+      console.log(`🎉 Upload complete! Success: ${successCount}, Failed: ${failCount}`);
+      
       if (successCount > 0) {
-        showToast(`Successfully uploaded ${successCount} song(s) to the cloud! 🔥`, 'success');
+        showToast(`Successfully uploaded ${successCount} of ${audioFiles.length} song(s) to the cloud! 🔥`, 'success');
+      }
+      
+      if (failCount > 0) {
+        showToast(`${failCount} song(s) failed to upload. Check console for details.`, 'error');
       }
     }
     

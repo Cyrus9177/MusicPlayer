@@ -270,14 +270,16 @@
       #sortSelect{min-width:100%!important;margin-bottom:8px}
       #searchBox{min-width:100%!important;flex:1!important}
       
-      .track{padding:10px 12px;min-height:64px}
-      .track-index{width:32px;font-size:14px}
-      .track-cover{width:48px;height:48px;font-size:20px}
-      .track-title{font-size:14px}
+      .track{padding:10px 12px;min-height:64px;display:flex!important;align-items:center;gap:8px}
+      .track-index{width:32px;font-size:14px;flex-shrink:0}
+      .track-info{flex:1;min-width:0;display:flex!important;align-items:center;gap:12px}
+      .track-cover{width:48px;height:48px;font-size:20px;flex-shrink:0}
+      .track-details{flex:1;min-width:0}
+      .track-title{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .track-meta{font-size:12px}
       .track-duration{display:none}
-      .track-actions{opacity:1}
-      .icon-btn{width:32px;height:32px;font-size:16px;padding:6px}
+      .track-actions{opacity:1!important;display:flex!important;gap:8px;flex-shrink:0}
+      .icon-btn{width:36px;height:36px;font-size:18px;padding:6px;display:flex!important;align-items:center;justify-content:center;flex-shrink:0}
       
       .player{display:grid;grid-template-columns:1fr;grid-template-rows:auto auto auto;gap:10px;padding:10px 16px;position:fixed;bottom:0;left:0;right:0;z-index:100}
       .player-info{order:1}

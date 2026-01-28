@@ -900,22 +900,29 @@
     
     function renderLibraries(libraries) {
       const container = document.getElementById('libraryList');
+      const isAllSongsActive = currentLibrary === 'All Songs';
       
-      // Add "All Songs" at the top
-      const allSongsHTML = `
-        <div class="library-item ${currentLibrary === 'All Songs' ? 'active' : ''}" onclick="switchLibrary('All Songs')">
+      // Build HTML efficiently using array join
+      const htmlParts = [
+        `<div class="library-item${isAllSongsActive ? ' active' : ''}" onclick="switchLibrary('All Songs')">
           <span><span class="playlist-icon-small"></span>All Songs</span>
-        </div>
-      `;
+        </div>`
+      ];
       
-      const librariesHTML = libraries.map(lib => `
-        <div class="library-item ${lib.name === currentLibrary ? 'active' : ''}" onclick="switchLibrary(\`${escapeHtml(lib.name)}\`)">
-          <span><span class="playlist-icon-small"></span>${escapeHtml(lib.name)}</span>
-          <button class="del" onclick="event.stopPropagation();deletePlaylist(\`${escapeHtml(lib.name)}\`, \`${lib.id}\`)" title="Delete playlist">×</button>
-        </div>
-      `).join('');
+      for (let i = 0; i < libraries.length; i++) {
+        const lib = libraries[i];
+        const escapedName = escapeHtml(lib.name);
+        const escapedId = escapeHtml(lib.id);
+        const isActive = lib.name === currentLibrary;
+        htmlParts.push(
+          `<div class="library-item${isActive ? ' active' : ''}" onclick="switchLibrary(\`${escapedName}\`)">
+            <span><span class="playlist-icon-small"></span>${escapedName}</span>
+            <button class="del" onclick="event.stopPropagation();deletePlaylist(\`${escapedName}\`, \`${escapedId}\`)" title="Delete playlist">×</button>
+          </div>`
+        );
+      }
       
-      container.innerHTML = allSongsHTML + librariesHTML;
+      container.innerHTML = htmlParts.join('');
     }
     
     // ============================================
@@ -1073,12 +1080,16 @@
     // clearLibrary() feature removed: clearing all music is dangerous and has been disabled.
     // If you want to re-enable, implement proper auth and add explicit confirmation.
     
+    // Debounce timer for search input
+    let searchDebounceTimer = null;
+    
     function applySearch() {
       const query = document.getElementById('searchBox').value.toLowerCase();
       const sortBy = document.getElementById('sortSelect').value;
       
       // Filter by search query
-      filteredTracks = query ? allTracks.filter(t => t.name.toLowerCase().includes(query)) : [...allTracks];
+      // Always copy array to avoid mutating allTracks during sorting
+      filteredTracks = query ? allTracks.filter(t => t.name.toLowerCase().includes(query)) : allTracks.slice();
       
       // Sort the filtered tracks
       if (sortBy === 'az') {
@@ -1097,6 +1108,14 @@
       renderTracks();
     }
     
+    // Debounced version for search input to avoid excessive re-renders while typing
+    function applySearchDebounced() {
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+      }
+      searchDebounceTimer = setTimeout(applySearch, 150);
+    }
+    
     function renderTracks() {
       const container = document.getElementById('trackList');
       const empty = document.getElementById('emptyState');
@@ -1108,11 +1127,19 @@
       }
       
       empty.style.display = 'none';
-      container.innerHTML = filteredTracks.map((track, idx) => {
+      
+      // Use array join for string building (more efficient than repeated concatenation)
+      const isAllSongs = currentLibrary === 'All Songs';
+      const htmlParts = [];
+      
+      for (let idx = 0; idx < filteredTracks.length; idx++) {
+        const track = filteredTracks[idx];
+        const isPlaying = currentTrackIndex === idx;
         const playlistsText = track.playlists ? track.playlists.join(', ') : 'Unknown';
-        return `
-        <div class="track ${currentTrackIndex === idx ? 'playing' : ''}" onclick="playTrack(${idx})">
-          <div class="track-index">${currentTrackIndex === idx ? '♪' : idx + 1}</div>
+        const escapedId = escapeHtml(track.id);
+        
+        htmlParts.push(`<div class="track${isPlaying ? ' playing' : ''}" onclick="playTrack(${idx})">
+          <div class="track-index">${isPlaying ? '♪' : idx + 1}</div>
           <div class="track-info">
             <div class="track-cover">♫</div>
             <div class="track-details">
@@ -1122,11 +1149,13 @@
           </div>
           <div class="track-duration">—</div>
           <div class="track-actions">
-            ${currentLibrary === 'All Songs' ? `<button class="icon-btn" onclick="event.stopPropagation();showAddToPlaylistModal('${track.id}')" title="Add to playlist">+</button>` : ''}
-            <button class="icon-btn" onclick="event.stopPropagation();deleteTrack('${track.id}')" title="Delete">×</button>
+            ${isAllSongs ? `<button class="icon-btn" onclick="event.stopPropagation();showAddToPlaylistModal('${escapedId}')" title="Add to playlist">+</button>` : ''}
+            <button class="icon-btn" onclick="event.stopPropagation();deleteTrack('${escapedId}')" title="Delete">×</button>
           </div>
-        </div>
-      `}).join('');
+        </div>`);
+      }
+      
+      container.innerHTML = htmlParts.join('');
     }
     
     // ============================================
@@ -1268,16 +1297,16 @@
         const libs = await getLibraries();
         const snapshot = await db.collection('tracks').get();
         let totalSize = 0;
-        let tracksByLib = {};
         
+        // Single pass through documents for efficiency
+        const trackCount = snapshot.size;
         snapshot.docs.forEach(doc => {
           const track = doc.data();
           totalSize += track.size || 0;
-          tracksByLib[track.library] = (tracksByLib[track.library] || 0) + 1;
         });
         
         // Update modal content
-        document.getElementById('storageTotalTracks').textContent = snapshot.size;
+        document.getElementById('storageTotalTracks').textContent = trackCount;
         document.getElementById('storageTotalSize').textContent = (totalSize / 1024 / 1024).toFixed(2) + ' MB';
         document.getElementById('storageTotalLibs').textContent = libs.length;
         
@@ -1467,7 +1496,8 @@
         }
       });
       
-      searchBox.addEventListener('input', applySearch);
+      // Use debounced search to avoid excessive re-renders while typing
+      searchBox.addEventListener('input', applySearchDebounced);
       
       const sortSelect = document.getElementById('sortSelect');
       sortSelect.addEventListener('change', applySearch);
@@ -1517,7 +1547,16 @@
     // ============================================
     // LIVE CLOCK
     // ============================================
+    // Cache DOM element reference for clock updates
+    let greetingTimeEl = null;
+    
     function updateClock() {
+      // Cache element reference on first call
+      if (!greetingTimeEl) {
+        greetingTimeEl = document.getElementById('greetingTime');
+        if (!greetingTimeEl) return;
+      }
+      
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -1525,11 +1564,7 @@
       const ampm = hours >= 12 ? 'PM' : 'AM';
       const hours12 = hours % 12 || 12;
       
-      const timeStr = `${hours12}:${minutes}:${seconds} ${ampm}`;
-      const greetingTimeEl = document.getElementById('greetingTime');
-      if (greetingTimeEl) {
-        greetingTimeEl.textContent = timeStr;
-      }
+      greetingTimeEl.textContent = `${hours12}:${minutes}:${seconds} ${ampm}`;
     }
     
     function startClock() {

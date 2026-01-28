@@ -912,11 +912,12 @@
       for (let i = 0; i < libraries.length; i++) {
         const lib = libraries[i];
         const escapedName = escapeHtml(lib.name);
+        const escapedId = escapeHtml(lib.id);
         const isActive = lib.name === currentLibrary;
         htmlParts.push(
           `<div class="library-item${isActive ? ' active' : ''}" onclick="switchLibrary(\`${escapedName}\`)">
             <span><span class="playlist-icon-small"></span>${escapedName}</span>
-            <button class="del" onclick="event.stopPropagation();deletePlaylist(\`${escapedName}\`, \`${lib.id}\`)" title="Delete playlist">×</button>
+            <button class="del" onclick="event.stopPropagation();deletePlaylist(\`${escapedName}\`, \`${escapedId}\`)" title="Delete playlist">×</button>
           </div>`
         );
       }
@@ -1083,17 +1084,11 @@
     let searchDebounceTimer = null;
     
     function applySearch() {
-      // Clear any pending debounced search to prevent race conditions
-      if (searchDebounceTimer) {
-        clearTimeout(searchDebounceTimer);
-        searchDebounceTimer = null;
-      }
-      
       const query = document.getElementById('searchBox').value.toLowerCase();
       const sortBy = document.getElementById('sortSelect').value;
       
       // Filter by search query
-      // Copy array when filtering to maintain immutability; direct reference when no filter needed
+      // Always copy array to avoid mutating allTracks during sorting
       filteredTracks = query ? allTracks.filter(t => t.name.toLowerCase().includes(query)) : allTracks.slice();
       
       // Sort the filtered tracks
@@ -1141,6 +1136,7 @@
         const track = filteredTracks[idx];
         const isPlaying = currentTrackIndex === idx;
         const playlistsText = track.playlists ? track.playlists.join(', ') : 'Unknown';
+        const escapedId = escapeHtml(track.id);
         
         htmlParts.push(`<div class="track${isPlaying ? ' playing' : ''}" onclick="playTrack(${idx})">
           <div class="track-index">${isPlaying ? '♪' : idx + 1}</div>
@@ -1153,8 +1149,8 @@
           </div>
           <div class="track-duration">—</div>
           <div class="track-actions">
-            ${isAllSongs ? `<button class="icon-btn" onclick="event.stopPropagation();showAddToPlaylistModal('${track.id}')" title="Add to playlist">+</button>` : ''}
-            <button class="icon-btn" onclick="event.stopPropagation();deleteTrack('${track.id}')" title="Delete">×</button>
+            ${isAllSongs ? `<button class="icon-btn" onclick="event.stopPropagation();showAddToPlaylistModal('${escapedId}')" title="Add to playlist">+</button>` : ''}
+            <button class="icon-btn" onclick="event.stopPropagation();deleteTrack('${escapedId}')" title="Delete">×</button>
           </div>
         </div>`);
       }

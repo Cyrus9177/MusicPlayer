@@ -666,12 +666,86 @@ function previousTrack() {
   }
 }
 
-function seekTo(e) {
+// --- Scrubbing state for pointer events ---
+let isScrubbing = false;
+let scrubRaf = null;
+let scrubTime = null;
+
+function getTimeFromPointer(e, bar, duration) {
+  const rect = bar.getBoundingClientRect();
+  const x = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+  let percent = (x - rect.left) / rect.width;
+  percent = Math.max(0, Math.min(1, percent));
+  return percent * duration;
+}
+
+function onProgressPointerDown(e) {
   const audio = document.getElementById('audio');
   const bar = e.currentTarget;
-  const rect = bar.getBoundingClientRect();
-  const percent = (e.clientX - rect.left) / rect.width;
-  audio.currentTime = percent * audio.duration;
+  if (!audio.duration || isNaN(audio.duration) || audio.duration <= 0) return;
+  e.preventDefault();
+  bar.setPointerCapture && bar.setPointerCapture(e.pointerId);
+  isScrubbing = true;
+  document.body.style.userSelect = 'none';
+  scrubTime = getTimeFromPointer(e, bar, audio.duration);
+  updateScrubUI(scrubTime, true);
+}
+
+function onProgressPointerMove(e) {
+  if (!isScrubbing) return;
+  const audio = document.getElementById('audio');
+  const bar = document.getElementById('progressBar2');
+  if (!audio.duration || isNaN(audio.duration) || audio.duration <= 0) return;
+  e.preventDefault();
+  scrubTime = getTimeFromPointer(e, bar, audio.duration);
+  if (!scrubRaf) {
+    scrubRaf = requestAnimationFrame(() => {
+      updateScrubUI(scrubTime, true);
+      audio.currentTime = scrubTime;
+      scrubRaf = null;
+    });
+  }
+}
+
+function onProgressPointerUp(e) {
+  if (!isScrubbing) return;
+  const audio = document.getElementById('audio');
+  const bar = document.getElementById('progressBar2');
+  if (!audio.duration || isNaN(audio.duration) || audio.duration <= 0) return;
+  e.preventDefault();
+  bar.releasePointerCapture && bar.releasePointerCapture(e.pointerId);
+  isScrubbing = false;
+  document.body.style.userSelect = '';
+  if (scrubTime != null) {
+    audio.currentTime = scrubTime;
+    updateScrubUI(scrubTime, false);
+  }
+  scrubTime = null;
+}
+
+function onProgressPointerCancel(e) {
+  isScrubbing = false;
+  scrubTime = null;
+  document.body.style.userSelect = '';
+}
+
+function updateScrubUI(time, instant) {
+  const audio = document.getElementById('audio');
+  const progressFilled = document.getElementById('progressFilled');
+  const progressThumb = document.getElementById('progressThumb');
+  const currentTimeLabel = document.getElementById('currentTime');
+  if (!audio.duration || isNaN(audio.duration) || audio.duration <= 0) return;
+  let percent = Math.max(0, Math.min(1, time / audio.duration));
+  if (instant) {
+    progressFilled.classList.add('instant');
+  } else {
+    progressFilled.classList.remove('instant');
+  }
+  progressFilled.style.width = (percent * 100) + '%';
+  if (progressThumb) {
+    progressThumb.style.left = (percent * 100) + '%';
+  }
+  currentTimeLabel.textContent = formatTime(time);
 }
 
 function updateVolumeSliderBackground(value) {
@@ -906,48 +980,65 @@ function setupEventListeners() {
   const audio = document.getElementById('audio');
   const volumeSlider = document.getElementById('volumeSlider');
   const searchBox = document.getElementById('searchBox');
-  
+  const progressBar = document.getElementById('progressBar2');
+
   fileInput.addEventListener('change', e => {
     if (e.target.files.length > 0) {
       handleFiles(Array.from(e.target.files));
       e.target.value = '';
     }
   });
-  
+
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();
     dropZone.classList.add('dragover');
   });
-  
+
   dropZone.addEventListener('dragleave', () => {
     dropZone.classList.remove('dragover');
   });
-  
+
   dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) handleFiles(files);
   });
-  
+
   dropZone.addEventListener('click', () => {
     fileInput.click();
   });
-  
+
+  // --- Progress bar pointer events ---
+  if (progressBar) {
+    progressBar.addEventListener('pointerdown', onProgressPointerDown);
+    progressBar.addEventListener('pointermove', onProgressPointerMove);
+    progressBar.addEventListener('pointerup', onProgressPointerUp);
+    progressBar.addEventListener('pointercancel', onProgressPointerCancel);
+    progressBar.style.touchAction = 'none';
+  }
+
   audio.addEventListener('timeupdate', () => {
-    const progress = (audio.currentTime / audio.duration) * 100 || 0;
-    document.getElementById('progressFilled').style.width = progress + '%';
-    document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+    if (!isScrubbing) {
+      const progress = (audio.currentTime / audio.duration) * 100 || 0;
+      document.getElementById('progressFilled').style.width = progress + '%';
+      document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+      // Move thumb in sync with progress
+      const progressThumb = document.getElementById('progressThumb');
+      if (progressThumb) {
+        progressThumb.style.left = progress + '%';
+      }
+    }
   });
-  
+
   audio.addEventListener('loadedmetadata', () => {
     document.getElementById('duration').textContent = formatTime(audio.duration);
   });
-  
+
   audio.addEventListener('ended', () => {
     nextTrack();
   });
-  
+
   if (audio) {
     audio.addEventListener('play', () => {
       const playIcon = document.getElementById('playIcon');
@@ -992,7 +1083,7 @@ function setupEventListeners() {
   if (sortSelect) {
     sortSelect.addEventListener('change', applySearch);
   }
-  
+
   const libraryNameInput = document.getElementById('libraryNameInput');
   if (libraryNameInput) {
     libraryNameInput.addEventListener('keypress', e => {

@@ -1119,6 +1119,19 @@ function setupEventListeners() {
 // ============================================
 // GLOBAL FUNCTIONS
 // ============================================
+// SEEK TO FUNCTION (fixes ReferenceError when called from UI)
+function seekTo(seconds) {
+  const audio = document.getElementById('audio');
+  if (!audio) return;
+  if (seconds == null || isNaN(seconds)) return;
+  try {
+    const clamped = Math.max(0, Math.min(seconds, audio.duration || Infinity));
+    audio.currentTime = clamped;
+  } catch (e) {
+    // ignore if audio not ready
+  }
+}
+
 window.migrateOldSongs = migrateOldSongs;
 window.showAllSongs = showAllSongs;
 window.switchLibrary = switchLibrary;

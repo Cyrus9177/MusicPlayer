@@ -977,23 +977,35 @@ function setupEventListeners() {
   const sortSelect = document.getElementById('sortSelect');
   sortSelect.addEventListener('change', applySearch);
   
-  document.getElementById('libraryNameInput').addEventListener('keypress', e => {
-    if (e.key === 'Enter') createLibrary();
-  });
-  
-  document.getElementById('newLibraryModal').addEventListener('click', e => {
-    if (e.target.id === 'newLibraryModal') hideNewLibraryModal();
-  });
-  
-  document.getElementById('addToPlaylistModal').addEventListener('click', e => {
-    if (e.target.id === 'addToPlaylistModal') hideAddToPlaylistModal();
-  });
-  
+  const libraryNameInput = document.getElementById('libraryNameInput');
+  if (libraryNameInput) {
+    libraryNameInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') createLibrary();
+    });
+  }
+
+  const newLibraryModal = document.getElementById('newLibraryModal');
+  if (newLibraryModal) {
+    newLibraryModal.addEventListener('click', e => {
+      if (e.target.id === 'newLibraryModal') hideNewLibraryModal();
+    });
+  }
+
+  const addToPlaylistModal = document.getElementById('addToPlaylistModal');
+  if (addToPlaylistModal) {
+    addToPlaylistModal.addEventListener('click', e => {
+      if (e.target.id === 'addToPlaylistModal') hideAddToPlaylistModal();
+    });
+  }
+
   // Storage modal click outside to close
-  document.getElementById('storageOverlay').addEventListener('click', e => {
-    if (e.target.id === 'storageOverlay') hideStorageModal();
-  });
-  
+  const storageOverlay = document.getElementById('storageOverlay');
+  if (storageOverlay) {
+    storageOverlay.addEventListener('click', e => {
+      if (e.target.id === 'storageOverlay') hideStorageModal();
+    });
+  }
+
   audio.volume = 0.7;
 }
 

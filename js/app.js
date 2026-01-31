@@ -1147,7 +1147,17 @@ window.playTrack = playTrack;
 window.togglePlay = togglePlay;
 window.nextTrack = nextTrack;
 window.previousTrack = previousTrack;
-window.seekTo = seekTo;
+window.seekTo = function(seconds) {
+  const audio = document.getElementById('audio');
+  if (!audio) return;
+  if (seconds == null || isNaN(seconds)) return;
+  try {
+    const clamped = Math.max(0, Math.min(seconds, audio.duration || Infinity));
+    audio.currentTime = clamped;
+  } catch (e) {
+    // ignore if audio not ready
+  }
+};
 window.showStorageInfo = showStorageInfo;
 window.hideStorageModal = hideStorageModal;
 

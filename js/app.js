@@ -244,16 +244,13 @@ function switchLibrary(name) {
   
   // Show/hide upload features based on library
   const uploadBtn = document.getElementById('uploadBtn');
-  const dropZone = document.getElementById('dropZone');
   
   if (name === 'All Songs') {
     // Show upload features in All Songs
     uploadBtn.style.display = 'block';
-    dropZone.style.display = 'block';
   } else {
     // Hide upload features in playlists
     uploadBtn.style.display = 'none';
-    dropZone.style.display = 'none';
   }
 }
 
@@ -994,7 +991,6 @@ async function addToPlaylist(playlistName) {
 // ============================================
 function setupEventListeners() {
   const fileInput = document.getElementById('fileInput');
-  const dropZone = document.getElementById('dropZone');
   const audio = document.getElementById('audio');
   const volumeSlider = document.getElementById('volumeSlider');
   const searchBox = document.getElementById('searchBox');
@@ -1005,26 +1001,6 @@ function setupEventListeners() {
       handleFiles(Array.from(e.target.files));
       e.target.value = '';
     }
-  });
-
-  dropZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
-  });
-
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) handleFiles(files);
-  });
-
-  dropZone.addEventListener('click', () => {
-    fileInput.click();
   });
 
   // --- Progress bar pointer events ---

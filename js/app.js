@@ -670,6 +670,8 @@ function previousTrack() {
 let isScrubbing = false;
 let scrubRaf = null;
 let scrubTime = null;
+let lastSeekTime = 0;
+const SEEK_THROTTLE = 50; // ms between audio.currentTime updates
 
 function getTimeFromPointer(e, bar, duration) {
   const rect = bar.getBoundingClientRect();
@@ -689,6 +691,9 @@ function onProgressPointerDown(e) {
   document.body.style.userSelect = 'none';
   scrubTime = getTimeFromPointer(e, bar, audio.duration);
   updateScrubUI(scrubTime, true);
+  // Immediately update on click
+  audio.currentTime = scrubTime;
+  lastSeekTime = Date.now();
 }
 
 function onProgressPointerMove(e) {
@@ -698,10 +703,19 @@ function onProgressPointerMove(e) {
   if (!audio.duration || isNaN(audio.duration) || audio.duration <= 0) return;
   e.preventDefault();
   scrubTime = getTimeFromPointer(e, bar, audio.duration);
+  
   if (!scrubRaf) {
     scrubRaf = requestAnimationFrame(() => {
+      // Always update UI for smooth visual feedback
       updateScrubUI(scrubTime, true);
-      audio.currentTime = scrubTime;
+      
+      // Throttle actual audio seeking to reduce stuttering
+      const now = Date.now();
+      if (now - lastSeekTime >= SEEK_THROTTLE) {
+        audio.currentTime = scrubTime;
+        lastSeekTime = now;
+      }
+      
       scrubRaf = null;
     });
   }
@@ -716,7 +730,9 @@ function onProgressPointerUp(e) {
   bar.releasePointerCapture && bar.releasePointerCapture(e.pointerId);
   isScrubbing = false;
   document.body.style.userSelect = '';
+  
   if (scrubTime != null) {
+    // Final seek to exact position
     audio.currentTime = scrubTime;
     updateScrubUI(scrubTime, false);
   }
@@ -738,8 +754,10 @@ function updateScrubUI(time, instant) {
   let percent = Math.max(0, Math.min(1, time / audio.duration));
   if (instant) {
     progressFilled.classList.add('instant');
+    if (progressThumb) progressThumb.classList.add('instant');
   } else {
     progressFilled.classList.remove('instant');
+    if (progressThumb) progressThumb.classList.remove('instant');
   }
   progressFilled.style.width = (percent * 100) + '%';
   if (progressThumb) {

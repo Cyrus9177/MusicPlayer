@@ -129,9 +129,9 @@ body{font-family:'Circular',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI
 .player-btn.play{background:linear-gradient(135deg,var(--text),#e0e0e0);color:#000;width:48px;height:48px;font-size:18px;box-shadow:0 4px 16px rgba(255,255,255,.2)}
 .player-btn.play:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(255,255,255,.3)}
 .progress-container{width:100%;display:flex;gap:12px;align-items:center;font-size:12px;color:var(--muted);font-weight:500;max-width:720px}
-.progress-bar{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:10px;cursor:pointer;position:relative;transition:height .2s;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,.3)}
+.progress-bar{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:10px;cursor:pointer;position:relative;transition:height .2s;overflow:visible;box-shadow:inset 0 2px 8px rgba(0,0,0,.3)}
 .progress-bar:hover{height:7px}
-.progress-filled{height:100%;background:linear-gradient(90deg,var(--accent),#2dd4bf);border-radius:10px;position:relative;box-shadow:0 0 12px rgba(30,215,96,.4);transition:width 0.2s cubic-bezier(0.4,0,0.2,1);}
+.progress-filled{height:100%;background:linear-gradient(90deg,var(--accent),#2dd4bf);border-radius:10px;position:relative;box-shadow:0 0 12px rgba(30,215,96,.4);transition:width 0.1s linear;will-change:width;transform:translateZ(0)}
 .progress-filled.instant{transition:none !important;}
 
 /* Progress thumb for scrubbing */
@@ -144,11 +144,15 @@ body{font-family:'Circular',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI
   background: var(--text);
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(30,215,96,.2);
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) translateZ(0);
   pointer-events: none;
-  transition: left 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s;
+  transition: left 0.1s linear, box-shadow 0.2s;
   opacity: 1;
   z-index: 2;
+  will-change: left;
+}
+.progress-thumb.instant {
+  transition: box-shadow 0.2s;
 }
 .progress-bar:hover .progress-thumb,
 .progress-bar:active .progress-thumb {

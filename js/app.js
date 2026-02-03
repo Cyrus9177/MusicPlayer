@@ -388,13 +388,16 @@ async function loadTracks() {
   
   // If "All Songs", load all tracks
   if (currentLibrary === 'All Songs') {
+    console.log('🔍 Setting up tracks listener for All Songs...');
     unsubscribeTracks = db.collection('tracks')
       .onSnapshot(snapshot => {
         allTracks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         console.log('✅ Loaded', allTracks.length, 'tracks from All Songs');
+        console.log('📋 Track details:', allTracks);
         applySearch();
       }, error => {
-        console.error('Error loading tracks:', error);
+        console.error('❌ Error loading tracks:', error);
+        console.error('Error details:', error.message, error.code);
       });
   } else {
     // Real-time listener for specific playlist - filter by playlists array
